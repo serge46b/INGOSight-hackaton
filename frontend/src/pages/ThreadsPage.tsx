@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, isApiError } from "../api";
-import { messageCount, ofThreads, relativeTime } from "../format";
+import { displayText, messageCount, ofThreads, relativeTime } from "../format";
 
 type ThreadItem = {
   id: number;
@@ -105,12 +105,12 @@ export function ThreadsPage() {
       <div className="stack">
         {shown.map((thread) => (
           <Link key={thread.id} className="thread-card" to={`/threads/${thread.id}`}>
-            <h2>{thread.subject}</h2>
+            <h2>{displayText(thread.subject)}</h2>
             <p className="meta">
               {thread.participants} · {messageCount(thread.message_count)} · {relativeTime(thread.last_message_at)}
             </p>
             {thread.last_message_preview ? (
-              <p className="preview">Последнее: «{thread.last_message_preview}»</p>
+              <p className="preview">Последнее: «{displayText(thread.last_message_preview)}»</p>
             ) : null}
           </Link>
         ))}

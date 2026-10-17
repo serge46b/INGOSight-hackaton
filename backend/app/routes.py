@@ -18,7 +18,7 @@ from app.errors import AppError
 from app.llm import ollama_status
 from app.mail import load_mock_messages, probe_imap
 from app.settings_store import effective, public_settings, save_settings, validate_settings
-from app.sync_service import start_sync, sync_status
+from app.sync_service import clear_mailbox, mailbox_key, start_sync, sync_status
 from app.textutil import from_name, preview
 
 logger = logging.getLogger("ingosight.api")
@@ -54,7 +54,11 @@ def get_settings() -> dict:
 
 @router.put("/api/settings")
 def put_settings(payload: dict = Body(...)) -> dict:
-    return save_settings(payload)
+    previous = mailbox_key(effective())
+    saved = save_settings(payload)
+    if mailbox_key(effective()) != previous:
+        clear_mailbox()
+    return saved
 
 
 @router.post("/api/settings/test-imap")

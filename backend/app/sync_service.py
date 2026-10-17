@@ -8,7 +8,7 @@ from app.crypto import encrypt_secret
 from app.db import db
 from app.errors import AppError
 from app.mail import load_imap_messages, load_mock_messages
-from app.rag import index_message
+from app.rag import index_message, reset_index
 from app.settings_store import effective, set_json_setting
 from app.textutil import MailLink, from_name, group_indices, strip_subject
 
@@ -142,6 +142,30 @@ def _fetch(cfg: dict):
         )
 
 
+def mailbox_key(cfg: dict) -> str:
+    if (cfg.get("imap_mode") or "mock") == "mock":
+        return "mock"
+    host = (cfg.get("imap_host") or "").strip().lower()
+    user = (cfg.get("imap_user") or "").strip().lower()
+    return f"imap:{host}:{user}"
+
+
+def clear_mailbox() -> None:
+    with db() as conn:
+        _wipe_mail(conn)
+    reset_index()
+
+
+def _wipe_mail(conn) -> None:
+    conn.execute("DELETE FROM summaries")
+    conn.execute("DELETE FROM drafts")
+    conn.execute("DELETE FROM tasks")
+    conn.execute("DELETE FROM messages")
+    conn.execute("DELETE FROM threads")
+    conn.execute("DELETE FROM accounts")
+    conn.execute("DELETE FROM settings WHERE key IN ('last_digest', 'last_sync')")
+
+
 def _store(messages, cfg: dict):
     links = [
         MailLink(item.message_id, item.in_reply_to, item.references, item.subject)
@@ -149,8 +173,9 @@ def _store(messages, cfg: dict):
     ]
     clusters = group_indices(links) if messages else []
     pending: list[tuple[int, int, str]] = []
+    replaced = False
     with db() as conn:
-        account_id = _ensure_account(conn, cfg)
+        account_id, replaced = _ensure_account(conn, cfg)
         existing_rows = conn.execute(
             """
             SELECT messages.id, messages.message_id, messages.thread_id, messages.body_text
@@ -243,33 +268,41 @@ def _store(messages, cfg: dict):
             """,
             (account_id,),
         ).fetchone()["count"]
+    if replaced:
+        reset_index()
     return thread_count, message_count, pending
 
 
-def _ensure_account(conn, cfg: dict) -> int:
+def _ensure_account(conn, cfg: dict) -> tuple[int, bool]:
     email = cfg["imap_user"] or "mock@local"
     host = cfg["imap_host"] or "mock"
     user = cfg["imap_user"] or "mock"
     secret = encrypt_secret(cfg["imap_password"]) if cfg["imap_password"] else "env"
-    row = conn.execute("SELECT id FROM accounts ORDER BY id LIMIT 1").fetchone()
+    key = mailbox_key(cfg)
+    row = conn.execute("SELECT id, source_key FROM accounts ORDER BY id LIMIT 1").fetchone()
+    replaced = False
+    if row is not None and (row["source_key"] or "") != key:
+        _wipe_mail(conn)
+        row = None
+        replaced = True
     if row:
         conn.execute(
             """
             UPDATE accounts
-            SET email = ?, imap_host = ?, imap_port = ?, imap_user = ?, imap_password_enc = ?
+            SET email = ?, imap_host = ?, imap_port = ?, imap_user = ?, imap_password_enc = ?, source_key = ?
             WHERE id = ?
             """,
-            (email, host, int(cfg["imap_port"]), user, secret, row["id"]),
+            (email, host, int(cfg["imap_port"]), user, secret, key, row["id"]),
         )
-        return row["id"]
+        return row["id"], replaced
     cursor = conn.execute(
         """
-        INSERT INTO accounts(email, imap_host, imap_port, imap_user, imap_password_enc)
-        VALUES(?, ?, ?, ?, ?)
+        INSERT INTO accounts(email, imap_host, imap_port, imap_user, imap_password_enc, source_key)
+        VALUES(?, ?, ?, ?, ?, ?)
         """,
-        (email, host, int(cfg["imap_port"]), user, secret),
+        (email, host, int(cfg["imap_port"]), user, secret, key),
     )
-    return int(cursor.lastrowid)
+    return int(cursor.lastrowid), replaced
 
 
 def _move_thread(conn, source: int, target: int) -> None:

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     imap_port INTEGER NOT NULL,
     imap_user TEXT NOT NULL,
     imap_password_enc TEXT NOT NULL,
+    source_key TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS threads (
@@ -88,6 +89,9 @@ def _connection() -> sqlite3.Connection:
 def init_db() -> None:
     with db() as conn:
         conn.executescript(SCHEMA)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(accounts)")}
+        if "source_key" not in columns:
+            conn.execute("ALTER TABLE accounts ADD COLUMN source_key TEXT")
 
 
 @contextmanager

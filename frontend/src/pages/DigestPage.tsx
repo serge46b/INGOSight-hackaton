@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, isApiError } from "../api";
-import { formatStamp, relativeTime } from "../format";
+import { displayText, formatStamp, pluralWord, relativeTime } from "../format";
 
 type Digest = {
   generated_at: string | null;
@@ -10,14 +10,6 @@ type Digest = {
   tasks: { id: number; thread_id: number | null; text: string; due_date: string | null; is_done: boolean }[];
   waiting: { thread_id: number; text: string }[];
 };
-
-function hoursLabel(count: number): string {
-  const tail = count % 10;
-  const hundred = count % 100;
-  if (tail === 1 && hundred !== 11) return "час";
-  if (tail >= 2 && tail <= 4 && (hundred < 12 || hundred > 14)) return "часа";
-  return "часов";
-}
 
 const empty: Digest = {
   generated_at: null,
@@ -79,7 +71,7 @@ export function DigestPage() {
   }
 
   const titleDate = digest.generated_at ? formatStamp(digest.generated_at) : "ещё не составлялась";
-  const hoursWord = hoursLabel(digest.period_hours);
+  const hoursWord = pluralWord(digest.period_hours, "час", "часа", "часов");
 
   return (
     <>
@@ -105,7 +97,7 @@ export function DigestPage() {
             {digest.urgent.map((item) => (
               <article key={`${item.thread_id}-${item.title}`} className="urgent">
                 <div>
-                  <strong>⚠ {item.title}</strong>
+                  <strong>⚠ {displayText(item.title)}</strong>
                   <p className="meta">
                     От: {item.from_addr} · {relativeTime(item.date)}
                   </p>
@@ -122,10 +114,9 @@ export function DigestPage() {
             {digest.tasks.map((task) => (
               <label key={task.id} className={task.is_done ? "task done" : "task"}>
                 <input type="checkbox" checked={task.is_done} onChange={() => void toggle(task)} />
-                <span>
-                  {task.text}
-                  {task.due_date ? ` срок: до ${task.due_date}` : " срок: не указан"}
-                  {task.is_done ? " (выполнено)" : ""}
+                <span className="task-body">
+                  <span className="task-text">{displayText(task.text)}</span>
+                  <span className="meta">{task.due_date ? `Срок: до ${task.due_date}` : "Срок не указан"}</span>
                 </span>
               </label>
             ))}
@@ -138,7 +129,7 @@ export function DigestPage() {
             <ul>
               {digest.waiting.map((item) => (
                 <li key={`${item.thread_id}-${item.text}`}>
-                  <Link to={`/threads/${item.thread_id}`}>{item.text}</Link>
+                  <Link to={`/threads/${item.thread_id}`}>{displayText(item.text)}</Link>
                 </li>
               ))}
             </ul>

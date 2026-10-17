@@ -42,6 +42,29 @@ export function ofThreads(count: number): string {
   return `${count} тредов`;
 }
 
+export function pluralWord(count: number, one: string, few: string, many: string): string {
+  const value = Math.abs(Math.trunc(count));
+  const tail = value % 10;
+  const hundred = value % 100;
+  if (hundred >= 11 && hundred <= 14) return many;
+  if (tail === 1) return one;
+  if (tail >= 2 && tail <= 4) return few;
+  return many;
+}
+
+export function displayText(value: string | null | undefined): string {
+  const raw = value || "";
+  if (!raw) return "";
+  const decoded = new DOMParser().parseFromString(raw, "text/html").documentElement.textContent || raw;
+  return decoded
+    .replace(/[\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\u2800\ufeff]/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function formatStamp(iso: string | null | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);

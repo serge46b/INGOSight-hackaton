@@ -27,6 +27,23 @@ def _collection_handle():
     return _collection
 
 
+def reset_index() -> None:
+    global _collection
+    _collection = None
+    try:
+        import chromadb
+        from chromadb.config import Settings as ChromaSettings
+
+        client = chromadb.HttpClient(
+            host=settings.chroma_host,
+            port=settings.chroma_port,
+            settings=ChromaSettings(anonymized_telemetry=False),
+        )
+        client.delete_collection("mail_chunks")
+    except Exception:
+        logger.info("chroma reset skipped")
+
+
 def index_message(thread_id: int, message_id: int, text: str) -> None:
     chunks = chunk_text(text, settings.context_chunk_tokens, settings.context_overlap_tokens)
     collection = _collection_handle()

@@ -1,3 +1,4 @@
+import html
 import re
 from dataclasses import dataclass
 
@@ -151,13 +152,7 @@ def _typographic(text: str) -> str:
 def html_to_text(value: str) -> str:
     text = re.sub(r"(?is)<(script|style).*?>.*?</\1>", " ", value or "")
     text = re.sub(r"(?s)<[^>]+>", " ", text)
-    text = (
-        text.replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-    )
+    text = html.unescape(text).replace("\u2800", " ").replace("\u00a0", " ")
     return re.sub(r"\s+", " ", text).strip()
 
 

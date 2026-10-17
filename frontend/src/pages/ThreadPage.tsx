@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, isApiError } from "../api";
-import { relativeTime } from "../format";
+import { displayText, relativeTime } from "../format";
 
 type Message = {
   id: number;
@@ -123,7 +123,7 @@ export function ThreadPage() {
     <>
       <div className="subbar">
         <Link to="/">← К списку</Link>
-        <strong>{thread?.subject || "Тред"}</strong>
+        <strong title={displayText(thread?.subject)}>{displayText(thread?.subject) || "Тред"}</strong>
       </div>
       <main className="page thread-layout">
         {error ? (
@@ -139,10 +139,10 @@ export function ThreadPage() {
           {thread?.messages.map((message) => (
             <article key={message.id} className="letter">
               <header>
-                <strong>От: {message.from_name}</strong>
+                <strong>От: {displayText(message.from_name)}</strong>
                 <span>{relativeTime(message.date)}</span>
               </header>
-              <p>{message.body_text || message.preview}</p>
+              <p>{displayText(message.body_text || message.preview)}</p>
               {message.attachments.length > 0 ? (
                 <p className="meta">Вложения: {message.attachments.join(", ")}</p>
               ) : null}
@@ -165,7 +165,7 @@ export function ThreadPage() {
             <div>
               <h2>Саммари треда</h2>
               {thread?.summary?.stale ? <p className="hint">Переписка изменилась — обновите саммари.</p> : null}
-              {summary ? <pre className="model-text">{summary}</pre> : <p className="muted">Саммари ещё нет.</p>}
+              {summary ? <pre className="model-text">{displayText(summary)}</pre> : <p className="muted">Саммари ещё нет.</p>}
               <button className="primary" type="button" onClick={() => void refreshSummary()} disabled={busy || loading}>
                 {busy ? "Готовим…" : "Обновить саммари"}
               </button>

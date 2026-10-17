@@ -11,7 +11,7 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-Интерфейс: `http://GPUnStorageServer.local:18080` (порт задаётся `APP_PORT` в `.env`).
+Интерфейс: `http://GPUnStorageServer:18080` (порт задаётся `APP_PORT` в `.env`).
 
 Первый старт скачивает образы и модели `qwen2.5:7b-instruct` и `nomic-embed-text`. Пока модели качаются, экраны почты уже открываются; генерация ответит ошибкой, пока Ollama не готова.
 
