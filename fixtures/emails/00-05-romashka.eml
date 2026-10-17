@@ -1,0 +1,30 @@
+From: =?utf-8?b?0JAuINCh0LjQtNC+0YDQvtCy0LA=?= <sidorova@company.example>
+To: =?utf-8?q?=D0=92=D1=8B?= <you@company.example>
+Subject: Re: =?utf-8?b?0JTQvtCz0L7QstC+0YAg0YEg0J7QntCeIMKr0KDQvtC80LDRiNC6?=
+ =?utf-8?b?0LDCuyDigJQg0L/RgNCw0LLQutC4INC/0L4g0L8u?= 4.2
+Message-ID: <t0-romashka-5@fixture.local>
+Date: Sat, 17 Oct 2026 16:05:19 -0000
+X-Fixture-Age-Hours: 52
+In-Reply-To: <t0-romashka-4@fixture.local>
+References: <t0-romashka-0@fixture.local> <t0-romashka-1@fixture.local>
+ <t0-romashka-2@fixture.local> <t0-romashka-3@fixture.local>
+ <t0-romashka-4@fixture.local>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============1563455897937265741=="
+
+--===============1563455897937265741==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+0J3Rg9C20L3QviDQv9C+0LTQs9C+0YLQvtCy0LjRgtGMINGE0LjQvdCw0LvRjNC90YvQuSDQsNC6
+0YIg0L/QviDQtNC+0LPQvtCy0L7RgNGDLCDRgdGA0L7QuiAxNS4wMy4K
+
+--===============1563455897937265741==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="final-act.pdf"
+MIME-Version: 1.0
+
+YWN0
+
+--===============1563455897937265741==--

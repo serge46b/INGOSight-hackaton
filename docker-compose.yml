@@ -1,0 +1,74 @@
+name: ingosight
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    gpus: all
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - |
+        ollama serve &
+        pid=$$!
+        ready=0
+        for i in $$(seq 1 90); do
+          if ollama list >/dev/null 2>&1; then
+            ready=1
+            break
+          fi
+          sleep 1
+        done
+        if [ "$$ready" != 1 ]; then
+          echo "ollama did not become ready" >&2
+          wait $$pid
+          exit 1
+        fi
+        ollama pull qwen2.5:7b-instruct || echo "pull qwen2.5:7b-instruct failed"
+        ollama pull nomic-embed-text || echo "pull nomic-embed-text failed"
+        wait $$pid
+    restart: unless-stopped
+
+  chromadb:
+    image: chromadb/chroma:0.6.3
+    environment:
+      ANONYMIZED_TELEMETRY: "FALSE"
+      IS_PERSISTENT: "TRUE"
+    volumes:
+      - chroma_data:/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      DATABASE_PATH: /data/mail.db
+      FIXTURES_DIR: /fixtures/emails
+    volumes:
+      - sqlite_data:/data
+      - ./fixtures/emails:/fixtures/emails:ro
+    depends_on:
+      - chromadb
+      - ollama
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${APP_PORT:-18080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  chroma_data:
+  sqlite_data:
