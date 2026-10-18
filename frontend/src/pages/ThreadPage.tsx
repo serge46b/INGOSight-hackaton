@@ -1,121 +1,144 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { api, isApiError } from "../api";
-import { displayText, relativeTime } from "../format";
+import { FormEvent, useEffect, useState } from "react"
+import { Link, useParams } from "react-router-dom"
+import { api, isApiError } from "../api"
+import { displayText, relativeTime } from "../format"
 
 type Message = {
-  id: number;
-  from_name: string;
-  date: string;
-  preview: string;
-  body_text: string;
-  attachments: string[];
-};
+  id: number
+  from_name: string
+  date: string
+  preview: string
+  body_text: string
+  attachments: string[]
+}
 
 type ThreadDetail = {
-  id: number;
-  subject: string;
-  messages: Message[];
-  summary: { text: string; stale: boolean } | null;
-  draft: { text: string; stale: boolean } | null;
-};
+  id: number
+  subject: string
+  messages: Message[]
+  summary: { text: string; stale: boolean } | null
+  draft: { text: string; stale: boolean } | null
+}
 
 const tones = [
   { value: "деловой", label: "деловой" },
   { value: "нейтральный", label: "нейтральный" },
   { value: "дружелюбный", label: "дружелюбный" },
-];
+]
 
 export function ThreadPage() {
-  const params = useParams();
-  const threadId = params.id;
-  const [thread, setThread] = useState<ThreadDetail | null>(null);
-  const [tab, setTab] = useState<"summary" | "ask" | "draft">("summary");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [tone, setTone] = useState("деловой");
-  const [draft, setDraft] = useState("");
-  const [copied, setCopied] = useState("");
+  const params = useParams()
+  const threadId = params.id
+  const [thread, setThread] = useState<ThreadDetail | null>(null)
+  const [tab, setTab] = useState<"summary" | "ask" | "draft">("summary")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [summary, setSummary] = useState("")
+  const [question, setQuestion] = useState("")
+  const [answer, setAnswer] = useState("")
+  const [tone, setTone] = useState("деловой")
+  const [draft, setDraft] = useState("")
+  const [copied, setCopied] = useState("")
 
   async function load() {
-    setLoading(true);
-    setError("");
+    setLoading(true)
+    setError("")
     try {
-      const data = await api<ThreadDetail>(`/api/threads/${threadId}`);
-      setThread(data);
-      setSummary(data.summary?.text ?? "");
-      setDraft(data.draft?.text ?? "");
+      const data = await api<ThreadDetail>(`/api/threads/${threadId}`)
+      setThread(data)
+      setSummary(data.summary?.text ?? "")
+      setDraft(data.draft?.text ?? "")
     } catch (reason) {
-      setThread(null);
-      setError(isApiError(reason) ? reason.message : "Нет соединения. Повторите позже");
+      setThread(null)
+      setError(
+        isApiError(reason) ? reason.message : "Нет соединения. Повторите позже",
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    void load();
-  }, [threadId]);
+    void load()
+  }, [threadId])
 
   async function refreshSummary() {
-    setBusy(true);
-    setError("");
+    setBusy(true)
+    setError("")
     try {
-      const data = await api<{ summary_text: string }>(`/api/threads/${threadId}/summary`, { method: "POST" });
-      setSummary(data.summary_text);
+      const data = await api<{ summary_text: string }>(
+        `/api/threads/${threadId}/summary`,
+        { method: "POST" },
+      )
+      setSummary(data.summary_text)
     } catch (reason) {
-      setError(isApiError(reason) ? reason.message : "Модель не ответила. Проверьте, запущен ли Ollama");
+      setError(
+        isApiError(reason)
+          ? reason.message
+          : "Модель не ответила. Проверьте, запущен ли Ollama",
+      )
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   async function ask(event: FormEvent) {
-    event.preventDefault();
-    if (!question.trim()) return;
-    setBusy(true);
-    setError("");
+    event.preventDefault()
+    if (!question.trim()) return
+    setBusy(true)
+    setError("")
     try {
-      const data = await api<{ answer: string }>(`/api/threads/${threadId}/ask`, {
-        method: "POST",
-        body: JSON.stringify({ question }),
-      });
-      setAnswer(data.answer);
+      const data = await api<{ answer: string }>(
+        `/api/threads/${threadId}/ask`,
+        {
+          method: "POST",
+          body: JSON.stringify({ question }),
+        },
+      )
+      setAnswer(data.answer)
     } catch (reason) {
-      setError(isApiError(reason) ? reason.message : "Модель не ответила. Проверьте, запущен ли Ollama");
+      setError(
+        isApiError(reason)
+          ? reason.message
+          : "Модель не ответила. Проверьте, запущен ли Ollama",
+      )
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   async function createDraft(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setCopied("");
+    event.preventDefault()
+    setBusy(true)
+    setError("")
+    setCopied("")
     try {
-      const data = await api<{ draft_text: string }>(`/api/threads/${threadId}/draft`, {
-        method: "POST",
-        body: JSON.stringify({ tone }),
-      });
-      setDraft(data.draft_text);
+      const data = await api<{ draft_text: string }>(
+        `/api/threads/${threadId}/draft`,
+        {
+          method: "POST",
+          body: JSON.stringify({ tone }),
+        },
+      )
+      setDraft(data.draft_text)
     } catch (reason) {
-      setError(isApiError(reason) ? reason.message : "Модель не ответила. Проверьте, запущен ли Ollama");
+      setError(
+        isApiError(reason)
+          ? reason.message
+          : "Модель не ответила. Проверьте, запущен ли Ollama",
+      )
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
   }
 
   async function copyDraft() {
     try {
-      await navigator.clipboard.writeText(draft);
-      setCopied("Черновик скопирован");
+      await navigator.clipboard.writeText(draft)
+      setCopied("Черновик скопирован")
     } catch {
-      setCopied("Не удалось скопировать. Выделите текст вручную");
+      setCopied("Не удалось скопировать. Выделите текст вручную")
     }
   }
 
@@ -123,7 +146,9 @@ export function ThreadPage() {
     <>
       <div className="subbar">
         <Link to="/">← К списку</Link>
-        <strong title={displayText(thread?.subject)}>{displayText(thread?.subject) || "Тред"}</strong>
+        <strong title={displayText(thread?.subject)}>
+          {displayText(thread?.subject) || "Тред"}
+        </strong>
       </div>
       <main className="page thread-layout">
         {error ? (
@@ -144,29 +169,54 @@ export function ThreadPage() {
               </header>
               <p>{displayText(message.body_text || message.preview)}</p>
               {message.attachments.length > 0 ? (
-                <p className="meta">Вложения: {message.attachments.join(", ")}</p>
+                <p className="meta">
+                  Вложения: {message.attachments.join(", ")}
+                </p>
               ) : null}
             </article>
           ))}
         </section>
         <section className="panel">
           <div className="tabs" role="tablist">
-            <button type="button" className={tab === "summary" ? "active" : ""} onClick={() => setTab("summary")}>
+            <button
+              type="button"
+              className={tab === "summary" ? "active" : ""}
+              onClick={() => setTab("summary")}
+            >
               Саммари
             </button>
-            <button type="button" className={tab === "ask" ? "active" : ""} onClick={() => setTab("ask")}>
-              Чат
+            <button
+              type="button"
+              className={tab === "ask" ? "active" : ""}
+              onClick={() => setTab("ask")}
+            >
+              Вопрос
             </button>
-            <button type="button" className={tab === "draft" ? "active" : ""} onClick={() => setTab("draft")}>
+            <button
+              type="button"
+              className={tab === "draft" ? "active" : ""}
+              onClick={() => setTab("draft")}
+            >
               Черновик
             </button>
           </div>
           {tab === "summary" ? (
             <div>
               <h2>Саммари треда</h2>
-              {thread?.summary?.stale ? <p className="hint">Переписка изменилась — обновите саммари.</p> : null}
-              {summary ? <pre className="model-text">{displayText(summary)}</pre> : <p className="muted">Саммари ещё нет.</p>}
-              <button className="primary" type="button" onClick={() => void refreshSummary()} disabled={busy || loading}>
+              {thread?.summary?.stale ? (
+                <p className="hint">Переписка изменилась — обновите саммари.</p>
+              ) : null}
+              {summary ? (
+                <pre className="model-text">{displayText(summary)}</pre>
+              ) : (
+                <p className="muted">Саммари ещё нет.</p>
+              )}
+              <button
+                className="primary"
+                type="button"
+                onClick={() => void refreshSummary()}
+                disabled={busy || loading}
+              >
                 {busy ? "Готовим…" : "Обновить саммари"}
               </button>
             </div>
@@ -176,9 +226,16 @@ export function ThreadPage() {
               <h2>Вопрос по переписке</h2>
               <label>
                 Вопрос
-                <textarea value={question} onChange={(event) => setQuestion(event.target.value)} />
+                <textarea
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                />
               </label>
-              <button className="primary" type="submit" disabled={busy || !question.trim()}>
+              <button
+                className="primary"
+                type="submit"
+                disabled={busy || !question.trim()}
+              >
                 Спросить
               </button>
               {answer ? <pre className="model-text">{answer}</pre> : null}
@@ -189,7 +246,10 @@ export function ThreadPage() {
               <h2>Черновик ответа</h2>
               <label>
                 Тон
-                <select value={tone} onChange={(event) => setTone(event.target.value)}>
+                <select
+                  value={tone}
+                  onChange={(event) => setTone(event.target.value)}
+                >
                   {tones.map((item) => (
                     <option key={item.value} value={item.value}>
                       {item.label}
@@ -197,19 +257,35 @@ export function ThreadPage() {
                   ))}
                 </select>
               </label>
-              <button className="primary" type="submit" disabled={busy || loading}>
+              <button
+                className="primary"
+                type="submit"
+                disabled={busy || loading}
+              >
                 Составить черновик
               </button>
-              {draft ? <pre className="model-text">{draft}</pre> : <p className="muted">Черновика ещё нет.</p>}
-              <button type="button" onClick={() => void copyDraft()} disabled={!draft}>
+              {draft ? (
+                <pre className="model-text">{draft}</pre>
+              ) : (
+                <p className="muted">Черновика ещё нет.</p>
+              )}
+              <button
+                type="button"
+                onClick={() => void copyDraft()}
+                disabled={!draft}
+              >
                 Скопировать в почту
               </button>
               {copied ? <p className="hint">{copied}</p> : null}
-              {thread?.draft?.stale ? <p className="hint">Переписка изменилась — составьте черновик заново.</p> : null}
+              {thread?.draft?.stale ? (
+                <p className="hint">
+                  Переписка изменилась — составьте черновик заново.
+                </p>
+              ) : null}
             </form>
           ) : null}
         </section>
       </main>
     </>
-  );
+  )
 }
